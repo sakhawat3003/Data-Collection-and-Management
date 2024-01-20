@@ -1,0 +1,890 @@
+---
+title: "Data Collection and Data Management Routines in R"
+author: 
+  - name: "Md Sakhawat Hossen"
+    email: "sakhawat3003@gmail.com"
+    affiliation: "Former Data Analyst at Navana Group, Bangladesh"
+date: "2/7/2022"
+output:
+  html_document:
+   toc: true
+   theme: cosmo
+   highlight: monochrome
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## *Introduction*
+
+First and foremost, Statistical Analysis mandates the creation and collection of data from different sources and formats. The vast swathes of libraries in R programming language facilitate the collection of data from myriads of formats and sources without a glitch. In this project, we will go through the basics of how to collect and create data then we will dive deep in to data management routines. This project can be used as a reference guide and manual for data analyst, data scientists, machine learning engineers, and learners. 
+
+All the code chunks will appear in shaded rectangular boxes and the output of the code chunks will be enclosed in unshaded rectangular boxes.    
+
+## *Data Creation*
+
+## *Objects*
+
+We use the term *object* to refer to data stored in R environment. But, object can denote to other complex data structures like functions. We can store variable data as object in R. 
+
+```{r}
+a<-2
+b<-3
+c<-4
+```
+
+The values 2, 3, and 4 are stored in objects *a,b,c* respectively. When we evaluate a, b, and c, we get the values stored in those objects.
+
+```{r}
+a
+b
+c
+```
+
+### *Vectors*
+
+We can also store more than one values in R objects. These are called *vectors*. Actually, R object with singular value is also a vector but containing only one value, a scalar.   
+
+Here, we create a numeric vector *x* and check the class of the object. 
+
+```{r}
+x<-c(1,2,3,4,5) #numeric vector
+x
+class(x)
+```
+
+The class of vector **x** is numeric. We can also create other types of vectors in R: character, logical. In programming language, a vector in R can be classified as one dimensional array. 
+
+```{r}
+x<-c("I", "love", "you") #character vector
+x
+class(x)
+```
+
+Here, we have created a character vector **x** with three different strings as the elements. 
+
+```{r}
+x<-c(TRUE, FALSE, TRUE, FALSE, TRUE) #a logical vector of true and false
+x
+class(x)
+```
+
+An important fact about vector is that it can only contain similar types of data. If we put numeric and character data in the same vector, R will evaluate all of them as strings. 
+
+```{r}
+x<-c(1,2,3, "I", "love", "you" )
+x
+class(x)
+```
+
+### *Data Frames*
+
+The most common way of storing a dataset in R object is in a *data frame*. Conceptually, we can think of data frame as a table with each row corresponding to a single observation and each column representing different variables.      
+
+```{r}
+dat<-data.frame(Student_id=1:10, Physics=c(85,69,72,67,92,89,73,74,56,91), 
+                Chemistry=c(81,87,67,73,95,59,78,66,94,71))
+dat
+```
+
+We have created a data frame with three variables based on the results of 10 students in Physics and Chemistry. 
+
+The *head()* command will show the first 6 lines of the data frame. 
+
+```{r}
+head(dat)
+```
+
+And the *str()* function will show the structure of the data frame. 
+
+```{r}
+str(dat)
+```
+
+We can see, the data frame contains one integer variable and two numeric variables as expected. 
+
+The **$** symbol is typically used to access the column/variable from a data frame. That extracted column/variable has the properties of a vector.  
+
+```{r}
+dat$Physics
+```
+
+*length()* function is used to find the length of any vector. 
+
+```{r}
+length(dat$Physics)
+```
+
+The *Physics* column in *dat* data frame has the length of 10.
+
+### *Factors*
+
+Factor is a special data type in R to characterize the categorical variables with different levels. 
+
+```{r warning=FALSE}
+library(dslabs)
+data("murders")
+head(murders)
+```
+
+```{r}
+class(murders$region)
+levels(murders$region)
+```
+
+We have loaded a dataset *murders* from the *dslabs* library. This data set contains a column named *region* with 4 different levels: Northeast, South, North Central, and West. This is a factor column with 4 categories.   
+
+We can reorder the appearance of these levels according to the total number of murders in each region.
+
+```{r}
+regions<-murders$region
+value<-murders$total
+ordered.regions<-reorder(regions,value, FUN = sum)
+levels(ordered.regions)
+```
+
+By default, the *reorder* function works in ascending order. 
+
+### *Matrices*
+
+Matrix is another kind of data type or object in R similar to data frame as they are two dimensional:it has rows and columns. But unlike data frame, matrices can not contain different type of data type. Matrices mostly contain numeric data. 
+
+But matrices have major advantages over data frames that we can execute matrix algebra operations on them, a powerful mathematical technique ubiquitous in data science, machine learning, and statistical learning.   
+
+```{r}
+matrix01<-matrix(data = 1:12, nrow = 3, ncol = 4, byrow = T) #creating a matrix with 3 rows and 
+#4 columns. The element will be arranged by row. 
+matrix01
+```
+
+We can excess matrix elements by the following operations.
+
+```{r}
+matrix01[2,3] #element of second row and third column
+matrix01[3,] #the entire third row
+matrix01[,2] #the entire second column 
+```
+
+The extracted row and column from the matrix is not a matrix anymore but a vector. 
+
+We can also subset the matrix to create smaller matrix.
+
+```{r}
+matrix02<-matrix01[1:2,2:4]
+matrix02
+```
+
+Later, we can convert and save the matrix as a data frame. 
+
+```{r}
+dat01<-as.data.frame(matrix01)
+dat01
+```
+
+The columns names have been given automatically but we can give new names to the columns. 
+
+```{r}
+column.names<-paste0("Column",1:4)
+column.names
+```
+
+First, we have created the column names. Now, we will assign the names to each column of the data frame.
+
+```{r}
+colnames(dat01)<-column.names
+dat01
+```
+
+# *Data Collection*
+
+## *Importing CSV files*
+
+CSV or the comma separated files are the most common file format for storing data. We can import CSV files from our local storage by the following command. The forward slashes "/" has been used in the path of file directory rather than the backward slash "\". Otherwise. it might produce an error in reading the file. If it feels way to cumbersome to set the path of the designated file then the function *file.choose()* can be used to choose the file by clicking on mouse. It is convenient for new learners.   
+```{r}
+icudata<-read.csv(file="C:/Users/PC/R Working Directory/Datasets for Statistical Analysis/ICUData.csv", header = T, stringsAsFactors = TRUE) #importing an icu data set and 
+#also converting all character columns to factors. 
+head(icudata)
+```
+
+TO check the number of observations and variables in the imported dataset, we can use the *dim()* function.
+
+```{r}
+dim(icudata)
+```
+
+This icudata set has 500 observations and 11 variables with a couple of factor variables. 
+
+The *read.csv()* function is comparatively slow. It is recommended to import any small dataset with *read.csv* function. We should better use *read_csv()* function from *readr* library to import bigger dataset faster than the *read.csv()* function. 
+
+We can also import a CSV file from a URL.
+
+```{r}
+data.url<-read.csv(file = 'https://raw.githubusercontent.com/Statology/Miscellaneous/main/basketball_data.csv')
+head(data.url)
+```
+
+```{r}
+class(data.url)
+```
+
+We have imported a basketball dataset from a URL saved as a data frame. 
+
+## *Importing Text files*
+
+We can use the function *readLines()* from base R to import and read the lines of any text files. We will read a text file containing the names of popular machine learning algorithms from our local machine.  
+
+```{r}
+ML.algorithms<-readLines(con = "C:/Users/PC/Desktop/Machine leanring algo.txt")
+ML.algorithms
+```
+
+We can also limit the number of lines to be read from the text file using the argument *n*.
+
+```{r}
+ML.algorithms.limited<-readLines(con ="C:/Users/PC/Desktop/Machine leanring algo.txt" , n = 5) 
+#reading only the first 5 lines
+ML.algorithms.limited
+```
+
+```{r}
+class(ML.algorithms)
+class(ML.algorithms.limited)
+```
+
+The imported text files are classified as character vector. We can read any line from the character vector by indexing.
+
+```{r}
+ML.algorithms[3] #reading the 3rd line
+```
+
+We can also convert these character vector in to data frames.
+
+```{r}
+data.algorithms<-data.frame(ML_algorithms=ML.algorithms)
+head(data.algorithms)
+```
+
+We can access any rows of the data frame by indexing the data frame.
+
+```{r}
+data.algorithms[4,] #extracting 4th row of the data frame 
+```
+
+## *Importing zip files*
+
+Suppose I have a zip file saved in my local directory. We have to first take a look what's inside the zip file to extract a particular data set. 
+
+```{r}
+unzip(zipfile ="C:/Users/PC/R Working Directory/Datasets for Statistical Analysis/murders.zip", 
+      list = TRUE) #the list argument will only show the list of files without extracting. 
+```
+
+The zip file consists of only one data set named *murders*. The following command will extract and import the *murders* data set as a data frame. 
+
+```{r warning=FALSE, message=FALSE}
+library(readr)
+data.unzip<-read_csv(file = unzip("C:/Users/PC/R Working Directory/Datasets for Statistical Analysis/murders.zip","murders.csv"))
+head(data.unzip)
+```
+
+The *murders* data set inside the zipped file has been successfully imported as a data frame. 
+
+## *Importing Excel File*
+
+We will use the *read_excel()* function from the *readxl* library to import excel data file. First, we need to install *readxl* library. We have already installed the library, so we need to simply load *readxl*.  
+
+```{r warning=FALSE}
+library(readxl)
+data.excel<-read_excel(path="C:/Users/PC/R Working Directory/Datasets for Statistical Analysis/sample excel data.xls", 
+sheet = NULL)
+head(data.excel)
+```
+
+```{r}
+class(data.excel)
+```
+
+We have successfully imported an excel data set on sales from a stationary shop that returned a tibble, a special type of data frame with more flexibility. The *sheet* argument specifies how many sheet we want to read. Alternatively, we can also specify the range for the columns and rows to be read by the *range* argument. 
+
+## *Importing TSV File*
+
+TSV files are tab separated value files where each data column is separated by tab. 
+
+```{r warning=FALSE, message=FALSE}
+library(readr)
+data.tsv<-read_tsv(file="C:/Users/PC/R Working Directory/Datasets for Statistical Analysis/Sample TSV files/InventoryEvents.tsv")
+head(data.tsv)
+```
+
+The inventory events tsv data set from the local machine has been imported as a tibble. 
+
+## *Importing File with Read.table() function*
+
+Read.table is a generic function to read data from any tabular format. We can specify the delimiter and header option as arguments in the *read.table()* function. By default, the function will not read the first row as the header. 
+
+```{r}
+df.table<-read.table(file = "C:/Users/PC/R Working Directory/Datasets for Statistical Analysis/ICUData.csv", 
+                     header = TRUE, sep = ",", stringsAsFactors = TRUE) #csv files are comma 
+#separated so sep argument has been set to "," 
+head(df.table)
+```
+
+# *Data Management and Data Manipulation*
+
+## *Sorting and Ordering*
+
+### *Sorting*
+
+We will import the US gun murder data for sorting operation. We will try to get some insights on the safety of different state in the context of gun murders.  
+
+```{r warning=FALSE}
+library(dslabs)
+data("murders")
+head(murders)
+```
+
+We will sort the total number of murders in increasing order from lowest to highest. 
+
+```{r}
+sort(murders$total)
+```
+
+However, this does not give us any information on which states have which murder total. We don't see here which state has 351 murder in total. For this purpose, we will look at another function *order()*. Order works a bit differently than the sorting function. It returns the index that sorts the original vector. We can create a vector and sort it.
+
+```{r}
+x<-c(10,89,2,8,17,13,49)
+sort(x)
+```
+
+### *Ordering*
+
+Rather than sorting the vector, we can get the index of for the sorting operation by *order()* function and sort it. The order function gives us the index of the elements in the vector for sorting in increasing order.  
+
+```{r}
+index<-order(x)
+index
+```
+
+We got the index we need to sort the vector *x*. Now we can sort it.
+
+```{r}
+x[index]
+```
+
+As we can see, the results are the same. So, how this helps us getting the name of the states with respect to the total murder?
+Remember, each index corresponds to a particular row in the data frame. So first, we can get the index according to the total murder. Then we can use the index to order the states according to the total murder.  
+
+```{r}
+index.total.murder<-order(murders$total)
+murders$state[index.total.murder]
+```
+
+So, finally we see, *Vermont* has lowest total of murder and *California* has the highest total of murder. 
+
+Let's check out if this is indeed true. 
+
+```{r}
+murders[murders$state %in% c("Vermont","California"),]
+```
+
+Yes, we see *Vermont* has only 2 murders in total and *California* with the 1257 murders in total. 
+
+If we want to sort in decreasing order than we can specify the argument *decreasing=TRUE*. 
+
+```{r}
+sort(murders$total, decreasing = TRUE)
+```
+
+### *Maximum and Minimum*
+
+If we simply want to find out the maximum value from a vector, we can use the *max()* function. 
+
+```{r}
+max(murders$total)
+```
+
+Now, we will look out for the state for this maximum total murder. For this, we can use the *which.max()* function. *which.max* function gives the index of the maximum of the vector, in this case, total murder.
+
+```{r}
+murders$state[which.max(murders$total)]
+```
+
+Similarly, we can use the functions *min()* and *which.min()* to find the minimum number of total murder and the state. 
+
+```{r}
+min(murders$total)
+murders$state[which.min(murders$total)]
+```
+
+### *Rank*
+
+Rank is another useful function related to sorting and ordering. It gives the ranking of each element in the vector according to their values. 
+
+```{r}
+x
+rank(x)
+```
+
+The first element in the vector x is 10 which is ranked 3 and 89 is ranked 1 for being the highest value.  
+
+## *Tidy Data*
+
+We can say, a data table or data frame is in tidy format if each row represents an observation and columns represent different variable available for each of the observation. Our murders dataset in a proper example of tidy data with each row representing a state with each of the five columns providing a different variable related to these states: name, abbreviation, region, population, and total murders.  
+
+```{r echo=FALSE}
+head(murders)
+```
+
+But not all data comes in such a nice, healthy, and tidy format. There are many examples of wide data, we need to reshape in to tidy format. The *tidyr* package includes several functions that are useful
+for tidying up data. We will import a fertility wide format dataset from *dslabs* package to reshape it in tidy format.    
+
+```{r warning=FALSE, message=FALSE}
+library(tidyverse)
+library(dslabs)
+path <- system.file("extdata", package="dslabs")
+filename <- file.path(path, "fertility-two-countries-example.csv")
+wide_data <- read_csv(filename)
+```
+
+```{r}
+wide_data[,1:8]
+```
+
+Okay, now we call this fertility wide data "not tidy". Why? Upon close inspection, we see each row has multiple observations of the same type of data(fertility) through different years. In tidy data format, the years as the column/variable heading should be in a "year" variable itself and the values of fertility should be in a column named "fertility".  
+
+### *Gather*
+
+We can use the *gather()* function from *tidyr* package to convert this wide data in to tidy data. 
+
+```{r}
+tidy.data<-gather(data = wide_data, "year","fertility","1960":"2015")
+head(tidy.data)
+```
+
+The data has been transformed in to tidy format with columns *year* and *fertility*. In this example, the column *country* was not gathered and each year resulted in two rows since we have two countries. It is recommended to specify in gather function which column will not be gathered. 
+
+```{r}
+tidy.data01<-gather(data = wide_data, year, fertility, -country)
+head(tidy.data01)
+```
+
+Both of the converted tidy data looks exactly the same. The class of *year* column in the tidy data is character. We need to convert this character vector to integer so that we can analysis the data. 
+
+```{r}
+tidy.data$year<-as.integer(tidy.data$year)
+tidy.data
+```
+
+Now that the data has become tidy, we can apply simple plotting command to the data. 
+
+```{r}
+tidy.data %>% ggplot(aes(year,fertility,color=country))+geom_point()
+```
+
+### *Spread*
+
+The *spread()* function does exactly the opposite of the *gather* function. 
+
+```{r}
+wide.data.again<-tidy.data %>% spread(key = year, value=fertility)
+wide.data.again[,1:8]
+```
+
+We have recovered the wide data from the tidy data. 
+
+### *Separate*
+
+All data wrangling processes are not as simple as the above examples we have shown. We will import another wide dataset with two variables. The dataset is definitely not tidy, and also not optimal for practical data analysis, and inference.   
+
+```{r message=FALSE}
+path <- system.file("extdata", package = "dslabs")
+filename <- file.path(path, "life-expectancy-and-fertility-two-countries-example.csv")
+raw_data <- read_csv(filename)
+select(raw_data, 1:5)
+```
+
+The data set is not in tidy format. Moreover, the data set contains two variables: fertility and life expectancy. We will use the *gather* function first to collapse the columns but we must be careful not to name the new column because the new key column will contain two different variables. We will sort this out later. 
+
+```{r}
+raw.gather.data<-raw_data %>% gather(key,value,-country)
+head(raw.gather.data)
+```
+
+We have to separate the year information from the variable names and create another column for the year.  
+```{r warning=FALSE}
+raw.gather.data %>% separate(key, c("year","variable_name"), "_") #separating the "key" column in to 
+#two new columns: year and variable_name. The separator here is "_"
+```
+
+We have received an warning for 112 rows where the *life_expectancy* has been truncated to *life* as the separator only worked for the first "-" separator but not for the second appearance of "_" in the variable. We can solve this problem by merging the extra "_" with the variables. 
+
+```{r}
+raw.gather.data<-raw.gather.data %>% separate(key, c("year","variable_name"), extra="merge")
+head(raw.gather.data, n=10)
+```
+
+In the last step, we need to spread *fertility* and *life_expectancy* as separate variables. 
+
+```{r}
+final.tidy.data<-raw.gather.data %>% spread(variable_name,value)
+head(final.tidy.data,n=10)
+```
+
+Finally, we have produced the neat and tidy data with one row for each observation with three variables: year, fertility and life expectancy. 
+
+## *Manipulation of Data Frames*
+
+The *dplyr* package from the *tidyverse* library provides some of the most common operations dealing with data frames. The names are very suggestive of the operations they perform and therefore easy to remember. To add a new column to the existing data frame, we will use *mutate* function. To filter the data frame conditionally, we will use *filter* and to subset a data frame, we will use *select* function. 
+
+### *Adding a column with mutate*
+
+We can extend our data frame by adding new columns by manipulating the already existing columns for further analysis. We will add a new *rate* column in our *murder* dataset to get the murder rate with respect to the per million population for each of the states. 
+
+```{r warning=FALSE}
+library(dslabs)
+data("murders")
+murders.new<-murders %>% mutate(rate=total/population*10^5)
+head(murders.new)
+```
+
+A new column *rate* has appeared in the *murders* data frame. 
+
+### *Subsetting with Filter*
+
+Now, we will subset our newly created *murders* data frame with conditionals applied through the *filter* function. 
+
+```{r}
+murders.new %>% filter(rate<=0.80)
+```
+
+We have filtered the state with murder rate below or equal to 0.80 per million of the population. 
+
+### *Select*
+
+Previously, subsetting was applied only to the rows of the data frame. We will not subset the data frame with columns by the *select* function. 
+
+```{r}
+murders.new.select<-murders.new %>% select(state, region, rate)
+murders.new.select %>% filter(rate<=0.80)
+```
+
+We have preferentially selected only the *state*, *region*, and *rate* columns and later filtered them with murder rate equal to or below 0.80 per million of the population. 
+
+### *Summarize*
+
+Summarizing data is one of the most important aspects of exploratory data analysis. The *summarize* function in *dplyr* package is suitable to get the summary statistics in a very easy-to-understand and intuitive format. In this section, we will import a curated dataset *heights* which includes male and female heights.   
+
+```{r}
+data("heights")
+head(heights)
+```
+
+We will filter the *male* height and get the average height of male. Later, we will learn to get grouped summary. 
+
+```{r}
+height.summary<-heights %>% filter(sex=="Male") %>% summarize(average_male=mean(height), 
+                                              standard_deviation=sd(height))
+height.summary
+```
+
+Remember, the *summarize* function always returns a data frame, not a numeric vector. 
+
+```{r}
+class(height.summary)
+```
+
+We can access the element of *height.summary* by the accessor *$* syntax.  
+
+```{r}
+height.summary$average_male
+height.summary$standard_deviation
+```
+
+Another thing to remember, the *summarize* function will always return a single numeric value. If we use any function which returns more than one value then we will get an error. But there's a tricky way to get *summarize* function returning more than a single numeric output. 
+
+If we want to calculate the average US murder rate then simply calculating the average of *rate* column in the *murders.new* will not suffice because all the states are given the same weight. This is wrong:
+
+```{r}
+mean(murders.new$rate)
+```
+
+The following is the right calculation of average:
+
+```{r}
+sum(murders.new$total)/sum(murders.new$population)*10^5
+```
+
+In this case, all the states are weighted in proportion to their population size. 
+
+### *Pull*
+
+In our previous discussion, we have seen that the *summarize* function always returns a data frame which is sometimes problematic if we simply need a numeric value as input for some other functions. 
+
+We can use the *pull* function to get around with it. The *pull* function is able to pull out a value from a data frame. 
+
+```{r}
+murders.new %>% summarize(overall_rate=sum(total)/sum(population)*10^5) %>%
+  pull(overall_rate)
+```
+
+This time we got a simple numeric value as output rather than a data frame from the *summarize* function. 
+
+### *Grouped Summary using group_by*
+
+In a data frame, if there are factors or categorical variable then we can group the data by each category. This grouped data can later be used to summarize on each group or category. 
+The *heights* dataset has a categorical variable *sex* with two distinct factor:*Male*, and *Female*. 
+We can group this dataset using *group_by* function from *dplyr* package. 
+
+```{r}
+grouped.heights<-heights %>% group_by(sex)
+grouped.heights
+```
+
+Although, this grouped dataset looks very similar to the *heights* dataset but internally this dataset has been divided in to two distinct datasets containing two different groups of *Male* and *Female*. 
+
+We can get the summary from this grouped dataset. 
+
+```{r}
+grouped.heights %>% summarize(average=mean(height), standard_deviation=sd(height))
+```
+
+The *summarize* function returned a data frame with *average* and *standard_deviation* for both the *Male* and *Female* groups. 
+
+From the *murders.new* dataset, we can group by *region* and get the median *rate* for each of the region. 
+
+```{r}
+murders.new %>% group_by(region) %>% summarize(median_rate=median(rate))
+```
+
+### *Arranging the Data Frames*
+
+ For close inspection, it is sometimes necessary to sort the data frame by the different columns. We have already learned about the *sort* and *order* function. But, if we want to sort an entire data table then the *arrange* function from the *dplyr* library is a very flexible choice. We will arrange the *murders.new* dataset first with the population size and later with the murder rate. By defaults, the *arrange* function orders the dataset in the ascending order.
+ 
+```{r}
+murders.new %>% arrange(population) %>% head()
+```
+ 
+```{r}
+murders.new %>% arrange(rate) %>% head()
+```
+
+If we want to arrange the table in descending order of the population size then we can use the *desc* function inside the *arrange* function. 
+
+```{r}
+murders.new %>% arrange(desc(population)) %>% head()
+```
+
+### *Top n*
+
+For most part of our data manipulation, we have been using the *head* function to shows the first couple of rows in the whole data frame. But, if we want to see the top n number of rows according to certain column then we can use the *top_n* function. Here, we will show the top 10 rows from the *murders.new* dataset according to murder rate. 
+Note than, these rows are not arranged in an ascending or descending order. For that, we need to arrange them explicitly.  
+
+```{r}
+murders.new %>% top_n(10, rate)
+```
+
+### *Dot Operator*
+
+The dot operator, ".", is a very useful operator to pull out a column from a data frame and save it as a vector after manipulation. Later we can calculate certain statistics from this vector. Here we will use the dot operator to pull out the rate column after manipulation then find the median. 
+
+```{r}
+rate<-murders %>% filter(region=="South") %>% mutate(rate=total/population*10^5) %>%
+  .$rate
+median(rate)
+```
+
+### *Do*
+
+Previously we have stated that if the *summarize* function have to return multiple outputs then it will produce an error. Most of the base R functions do not understand the *group_by* tibble and we can't directly pipe the output of a grouped tibble as the input of a R functions. 
+
+The *do* function comes to the rescue. It essentially creates the bridge between base R functions and the tibbles. For that, we have to create a function that fits in to the tidyverse approach: it receives a data frame and returns a data frame. We will create a function to return minimum, median, and the maximum height from the data frame provided as the argument of the function. 
+
+```{r}
+new.height.summary<-function(dat){
+  x<-quantile(dat$height, c(0,0.5,1)) #0 for minimum, 0.5 for median and 1 for the maximum. 
+  tibble(minimum=x[1], median=x[2], maximum=x[3])
+}
+```
+
+Now, instead of using the *summarize* function we can use our custom-made summary function combined with the *do* function to get robust summary for both Male and Female when they are grouped by the *group_by* function. 
+
+```{r}
+heights %>% group_by(sex) %>% do(new.height.summary(.))
+```
+
+Voila! That worked perfectly. We had to use the dot operator inside the *new.height.summary* function to pipe the tibble created by *group_by* function as the argument of the *new.height.summary* function. Otherwise it will produce an error by saying *argument "dat" is missing*.
+
+## *Joining Tables: alternatives of SQL*
+
+For data analysis, one table might not be fully adequate for the purpose. We may require to explore more data tables and at times, join those tables together to compare various statistics. This section will be much more similar to SQL join functions and other set operations as well. We will explore all of them followed by practical examples.  
+
+Suppose, we intent to explore the relationship between the population size of each state in US and the number of electoral votes. For this, we will import two different datasets, one containing the US population size and the other with the electoral votes. First, we load the table with population size. 
+
+```{r echo=FALSE}
+data("murders")
+head(murders)
+```
+
+And this table contains the number of electoral votes. 
+
+```{r echo=FALSE}
+data("polls_us_election_2016")
+head(results_us_election_2016)
+```
+
+Concatenating or joining these two tables straightforward is not savvy since the order of states in both tables are different. We can check this by this command. 
+
+```{r}
+identical(results_us_election_2016$state, murders$state)
+```
+
+The *join* functions described below are built to handle these situations. 
+
+Let's join these two tables by the *left_join()* function from the *dplyr* library. We will remove the *others* column to fit the table in the screen. 
+
+```{r}
+tab.joined<-left_join(murders,results_us_election_2016, by="state") %>% select(-others)
+head(tab.joined)
+```
+
+The two tables have been joined successfully. Now, we can navigate and draw a smooth plot from this newly created data table using *ggplot* library. 
+
+```{r message=FALSE}
+library(ggrepel)
+tab.joined %>% ggplot(aes(population/10^6, electoral_votes, label = abb)) + #population in millions
+geom_point() +
+geom_text_repel(max.overlaps = 20) + #for marking points in plots with state abbreviation
+scale_x_continuous(trans = "log2") +
+scale_y_continuous(trans = "log2") +
+geom_smooth(method = "lm", se = FALSE) #fitting a linear model 
+```
+
+In practice, we will not always be so lucky to get two tables with matching rows, in this case, matching state names in both of the tables.  
+
+We will now create two tables with some matching and non matching states.  
+
+```{r}
+table01<-slice(murders,1:8) %>% select(state, population)
+table01
+```
+
+```{r}
+table02<-results_us_election_2016 %>% 
+  filter(state %in% c("Alabama","Alaska","Arizona","Delaware","Colorado","Ohio","Texas","Florida")) %>%
+  select(state,electoral_votes)
+table02
+```
+
+### *Left Join*
+
+If we want a table like *table01* and simply want to add electoral votes from *table02* then we can use the *left_join* function. We also need to specify the criteria in the argument by which to match the two tables, in this case, *state*.  
+
+```{r}
+table.left<-left_join(table01, table02, by="state")
+table.left
+```
+
+We can see, three *NA's* have been introduced in the *electoral_votes* column due to the absence of matching states in *table02* with *table01*. The states *Arkansas*,*California*, and *Connecticut* are missing in the second table. 
+
+### *Right Join*
+
+Alternatively, we can join *table01* and *table02* but this time according to the matching states of *table02*. We will use *right_join* function here. 
+
+```{r}
+table.right<-right_join(table01, table02, by="state")
+table.right
+```
+
+We can see, the preferences have been given to *table02* with three NA's being introduced in the *population* column as the states *Texas*, *Florida*, and *Ohio* are missing in *table01*. 
+
+### *Inner Join*
+
+If we want to join two tables and keep only those rows with matching information then we can use the *inner_join* function. This is similar to the set operation *intersection*. 
+
+```{r}
+table.inner<-inner_join(table01,table02, by="state")
+table.inner
+```
+
+Only the states common to both of the tables are returned. 
+
+### *Full Join*
+
+If we intend to keep all the rows from both of the tables then we can use *full_join*. It is similar to the set operation *union*. The non-matching rows will return *NA's*.
+
+```{r}
+table.full<-full_join(table01, table02, by="state")
+table.full
+```
+
+### *Semi Join*
+
+The *semi_join* function keep the part of first table for which we have information in the second. It
+does not add the columns of the second. 
+
+```{r}
+table.semi<-semi_join(table01, table02, by="state")
+table.semi
+```
+
+### *Anti Join*
+
+*anti_join* function is the opposite of *semi_join* function. It keeps the information of *table01* for which there are no matching information in *table02*
+
+```{r}
+table.anti<-anti_join(table01, table02, by="state")
+table.anti
+```
+
+## *Set Operations*
+
+Set operations are pretty useful for combining datasets. Defaults R commands for set operations are uniquely applicable on vectors but set operations from *dplyr* package are applicable also in data frames. Basic set operations are *intersection*, *union*, and *set difference*.  
+
+### *Intersection*
+
+We will create two subsets of tables from the previously created *tab.joined* table. 
+
+```{r}
+set01<-tab.joined[1:5,] #selecting the first 5 rows
+set02<-tab.joined[3:7,] #selecting rows 3 to 7
+```
+
+To make sure, we use the *intersect* function from the *dplyr* rather than the base package, we can use *dplyr::intersect* command like this: 
+
+```{r}
+dplyr::intersect(set01,set02)
+```
+
+We get only three rows common in the two tables or sets. 
+
+### *Union*
+
+The *union* function from the *dplyr* package will unite or combine all the rows in the two tables or sets. 
+
+```{r}
+dplyr::union(set01,set02)
+```
+
+Now, we get all the rows combined in the two tables or sets.
+
+### *Set Difference*
+
+The *setdiff* function in *dplyr* package will subtract the common rows, between first and second set, from the first set.
+
+```{r}
+dplyr::setdiff(set01,set02)
+```
+
+### *Set Equality*
+
+The *setequal* function from the *dplyr* package is a very important function to check whether two sets or tables are equal regardless on the order of the rows. 
+
+```{r}
+dplyr::setequal(set01,set02)
+```
+
+set01 and set02 tables are not equal. They have different rows. 
+
+This marks the end of this *Data Collection and Data Management* project. In future string processing, web scraping, and Data Mining procedures in R will be discussed in details.  
+
